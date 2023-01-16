@@ -1,0 +1,57 @@
+h1 {
+    background-color: gray;
+    text-align: center;
+}
+
+label {
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.card {
+    margin: 10px;
+}
+
+.colone {
+    background-color: whitesmoke;
+}
+
+.coltwo {
+    background-color: whitesmoke;
+}
+
+.btnRow { 
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.red {
+background-color: rgb(212, 7, 7);
+}
+
+.purple {
+    background-color: purple;
+}
+
+.green {
+    background-color: green;
+}
+ 
+.yellow {
+    background-color: yellow;
+}
+
+.orange {
+    background-color: olive;
+}
+
+.cardTodayDate {
+    font-size: 15px;
+}
+
+.icons {
+    height: 65px;
+    width: 65px;
+}
+

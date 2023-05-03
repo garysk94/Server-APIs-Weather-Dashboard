@@ -1,192 +1,239 @@
-var key = '64f2ee2a8261daa4d9f780f5b365f275';
-var city = "New Haven"
-//Grabs the current time and date
-var date = moment().format('dddd, MMMM Do YYYY');
-var dateTime = moment().format('YYYY-MM-DD HH:MM:SS')
+const apiUrl = "https://api.openweathermap.org/data/2.5/weather";
+const apiUrl3 = "https://api.openweathermap.org/data/2.5/onecall";
+const APPID = "7d1b285353ccacd5326159e04cfab063";
 
-var cityHist = [];
+const maxSearchHistory = 5 // this is the number of unique searches savewd to localstorage and the search window
 
-//Will save the text value of the search and save it to an array and storage
-$('.search').on("click", function (event) {
-	event.preventDefault();
-	city = $(this).parent('.btnPar').siblings('.textVal').val().trim();
-	if (city === "") {
-		return;
-	};
-	cityHist.push(city);
+//
+// lets setup local storage and related array
+//
 
-	localStorage.setItem('city', JSON.stringify(cityHist));
-	fiveForecastEl.empty();
-	getHistory();
-	getWeatherToday();
+if (localStorage.getItem("MY_WEATHER_APP_SEARCH_HISTORY") === null) {
+    var searchHistory = [];
+    localStorage.setItem("MY_WEATHER_APP_SEARCH_HISTORY", JSON.stringify(searchHistory));
+} else {
+    var searchHistory = JSON.parse(localStorage.getItem("MY_WEATHER_APP_SEARCH_HISTORY"));
+}
+
+//
+// listener for the ENTER KEY so you can type your search and hit ENTER
+//
+
+function getSearchResults () {
+    $(document).on("keypress", "input", function(e){
+        if(e.which == 13){
+            var inputVal = $(this).val();
+            searchWeather (inputVal);
+            $(this).val('');
+        }
+    })
+};
+
+//
+// click listener on the search history buttons
+//
+
+$("#search-history").click(function(e) {
+    searchWeather ($(e.target).text().trim());
 });
 
-//Will create buttons based on search history 
-var contHistEl = $('.cityHist');
-function getHistory() {
-	contHistEl.empty();
+searchWeather("Ansonia");
 
-	for (let i = 0; i < cityHist.length; i++) {
+getSearchResults();
 
-		var rowEl = $('<row>');
-		var btnEl = $('<button>').text(`${cityHist[i]}`)
+var searchString = "Ansonia";
+var latCity;
+var lonCity;
+var humidity;
+var windspeed;
+var UVindex;
+var isValidSearch = true;
 
-		rowEl.addClass('row histBtnRow');
-		btnEl.addClass('btn btn-outline-secondary histBtn');
-		btnEl.attr('type', 'button');
+function handleErrors(response) {
+    if (!response.ok) {
+        throw Error(response.statusText);
+    }
+    return response;
+}
+    
+function showAlert (message, className) {
+    const div = document.createElement('div');
+    div.className = `text-is-centered message is-${className}`;
+    div.appendChild(document.createTextNode(message));
+    const container = document.querySelector('.box');
+    const search = document.querySelector('#search-box');
+    container.insertBefore(div, search);
+    // Vanish in 3 seconds
+    setTimeout(() => document.querySelector('.message').remove(),3000);
+}
 
-		contHistEl.prepend(rowEl);
-		rowEl.append(btnEl);
-	} if (!city) {
-		return;
-	}
-	
-    //Allows the buttons to start a search
-	$('.histBtn').on("click", function (event) {
-		event.preventDefault();
-		city = $(this).text();
-		fiveForecastEl.empty();
-		getWeatherToday();
-	});
-};
+function searchWeather (searchString) {
 
-//Grab the main 'Today' card body.
-var cardTodayBody = $('.cardBodyTd')
+    let fetchUrl=apiUrl+"?q="+searchString+"&APPID="+APPID;
 
-//Applies the weather data to the today card and then launches the five day forecast
-function getWeatherToday() {
-	var getUrlCurrent = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=imperial&appid=${key}`;
+   
+    // this is the first fetch - we get lat and lon from this fetch
 
-	$(cardTodayBody).empty();
+   fetch (fetchUrl, {
+        method: 'GET', //GET is the default.
+        credentials: 'same-origin', // include, *same-origin, omit
+        redirect: 'follow', // manual, *follow, error
+    })
+    .then(handleErrors)
+    .then(function (response) {
+        return response.json();    
+    })
+    .catch(error => {
+        console.log("yo dawg "+error) 
+        isValidSearch=false;
 
-	$.ajax({
-		url: getUrlCurrent,
-		method: 'GET',
-	}).then(function (response) {
-		$('.cardTodayCityName').text(response.name);
-		$('.cardTodayDate').text(date);
-		//Icons that are displayed on the weather cards 
-		$('.icons').attr('src', `https://openweathermap.org/img/wn/${response.weather[0].icon}@2x.png`);
-		// Displays Weather Temperature 
-		var pEl = $('<p>').text(`Temperature: ${response.main.temp} °F`);
-		cardTodayBody.append(pEl);
-		//Displays Feels Like 
-		var pElTemp = $('<p>').text(`Feels Like: ${response.main.feels_like} °F`);
-		cardTodayBody.append(pElTemp);
-		//Displays Humidity
-		var pElHumid = $('<p>').text(`Humidity: ${response.main.humidity} %`);
-		cardTodayBody.append(pElHumid);
-		//Set the latitude and longtitude from the searched city
-		var cityLon = response.coord.lon;
-		// console.log(cityLon);
-		var cityLat = response.coord.lat;
-		// console.log(cityLat);
+        showAlert ("invalid city name","danger");
 
-		var getUrlUvi = `https://api.openweathermap.org/data/2.5/onecall?lat=${cityLat}&lon=${cityLon}&exclude=hourly,daily,minutely&appid=${key}`;
+        return;
+    })
+    .then(function (data) {      
+        if (isValidSearch) {
 
-		$.ajax({
-			url: getUrlUvi,
-			method: 'GET',
-		}).then(function (response) {
-			var pElUvi = $('<p>').text(`UV Index: `);
-			var uviSpan = $('<span>').text(response.current.uvi);
-			var uvi = response.current.uvi;
-			pElUvi.append(uviSpan);
-			cardTodayBody.append(pElUvi);
-			
-            //set the UV index to match an exposure chart severity based on color 
-			if (uvi >= 0 && uvi <= 2) {
-				uviSpan.attr('class', 'green');
-			} else if (uvi > 2 && uvi <= 5) {
-				uviSpan.attr("class", "yellow")
-			} else if (uvi > 5 && uvi <= 7) {
-				uviSpan.attr("class", "orange")
-			} else if (uvi > 7 && uvi <= 10) {
-				uviSpan.attr("class", "red")
-			} else {
-				uviSpan.attr("class", "purple")
-			}
-		});
-	});
-	getFiveDayForecast();
-};
+            let latCity = data.coord.lat;
+            let lonCity = data.coord.lon;   
 
-var fiveForecastEl = $('.fiveForecast');
+            let fetchUrl=apiUrl3+"?lat="+latCity+"&lon="+lonCity+"&units=imperial&APPID="+APPID;
+        
+            //
+            // this is the subsequent fetch to get 5 day, and current uv
+            //
 
-function getFiveDayForecast() {
-	var getUrlFiveDay = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=imperial&appid=${key}`;
+            fetch (fetchUrl, {
+                method: 'GET', //GET is the default.
+                credentials: 'same-origin', // include, *same-origin, omit
+                redirect: 'follow', // manual, *follow, error
+            })
+            .then(function (response) {
+                return response.json();    
+            })
+            .then(function (data2) {
+                //
+                // there is some formatting that operweathermap does on the search string, so lets ride that 
+                // and set what we display based on what the city name we get back
+                //
+                var searchString2 = data.name; 
+                let iconUrl="http://openweathermap.org/img/wn/"+data2.current.weather[0].icon+"@2x.png";
 
-	$.ajax({
-		url: getUrlFiveDay,
-		method: 'GET',
-	}).then(function (response) {
-		var fiveDayArray = response.list;
-		var myWeather = [];
-		
-        //Made a object that would allow for easier data read
-		$.each(fiveDayArray, function (index, value) {
-			testObj = {
-				date: value.dt_txt.split(' ')[0],
-				time: value.dt_txt.split(' ')[1],
-				temp: value.main.temp,
-				feels_like: value.main.feels_like,
-				icon: value.weather[0].icon,
-				humidity: value.main.humidity
-			}
+                //
+                // let's write out the current weather
+                //
 
-			if (value.dt_txt.split(' ')[1] === "12:00:00") {
-				myWeather.push(testObj);
-			}
-		})
+                $("#current-weather").html(`
+                <div class="title is-4">
+                    ${data.name} (${moment(data2.daily[0].dt, 'X').format('LL')}) 
+                    <img src=${iconUrl} alt="Weather Icon" class="smaller-icon">
+                </div>
+                `);
 
-		
-        //Displays the cards to the screen 
-		for (let i = 0; i < myWeather.length; i++) {
+                //
+                // What were doing here is color coding the UV Index.  Here's how
+                // First lets build an array called uvScale and in index 0 and 1 will be the class name for green
+                // in that array we'll put yellow in 2 3 4, and 5 thru 10 will be red.
+                // Then - we're gonna round the actual current uvi, and then just use that as the index on the 
+                // array for the class name
+                //
 
-			var divElCard = $('<div>');
-			divElCard.attr('class', 'card text-white bg-primary mb-3 cardOne');
-			divElCard.attr('style', 'max-width: 200px;');
-			fiveForecastEl.append(divElCard);
-
-			var divElHeader = $('<div>');
-			divElHeader.attr('class', 'card-header')
-			var m = moment(`${myWeather[i].date}`).format('MM-DD-YYYY');
-			divElHeader.text(m);
-			divElCard.append(divElHeader)
-
-			var divElBody = $('<div>');
-			divElBody.attr('class', 'card-body');
-			divElCard.append(divElBody);
-
-			var divElIcon = $('<img>');
-			divElIcon.attr('class', 'icons');
-			divElIcon.attr('src', `https://openweathermap.org/img/wn/${myWeather[i].icon}@2x.png`);
-			divElBody.append(divElIcon);
-
-			//Displays "Temperature" for the five future date cards
-			var pElTemp = $('<p>').text(`Temperature: ${myWeather[i].temp} °F`);
-			divElBody.append(pElTemp);
-             // Displays "Humidity" for the five future date cards
-            var pElHumid = $('<p>').text(`Humidity: ${myWeather[i].humidity} %`);
-			divElBody.append(pElHumid)
-			//Displays "Feels Like" for the five future date cards
-			var pElFeel = $('<p>').text(`Feels Like: ${myWeather[i].feels_like} °F`);
-			divElBody.append(pElFeel);
+                var uvScale = ["uvi-green", "uvi-green", "uvi-yellow", "uvi-yellow", "uvi-yellow", "uvi-red", "uvi-red", "uvi-red", "uvi-red", "uvi-red", "uvi-red"];
+                var uvClass = uvScale[Math.round(data2.current.uvi)];
             
-		}
-	});
-};
+                $("#current-weather").append(`
+                <div>
+                    Temperature: ${Math.round(data2.current.temp)} &#8457<br>
+                    Humidify: ${data2.current.humidity} %<br>
+                    Wind Speed: ${Math.round(data2.current.wind_speed)} MPH<br>
+                    UV Index: <span class="${uvClass}">&nbsp;&nbsp;&nbsp;${data2.current.uvi}&nbsp;&nbsp;&nbsp;</span>
+                </div>
+                `);
 
-//Will show the default city that is set as New Haven
-function initLoad() {
+                //
+                // let's start by clearing out the five day forecast block
+                //
 
-	var cityHistStore = JSON.parse(localStorage.getItem('city'));
+                $("#five-day-forecast").html(``);
 
-	if (cityHistStore !== null) {
-		cityHist = cityHistStore
-	}
-	getHistory();
-	getWeatherToday();
-};
+                //
+                // since we only want 5 days, and since index 0 is the current day, lets
+                // loop 1 through 6
+                //
 
-initLoad();
+                for (let i = 1; i < 6; i++ ) {
+                    $("#five-day-forecast").append(` 
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="content">
+                                    <div class="is-size-6">
+                                        ${moment(data2.daily[i].dt, 'X').format('L')}<br>
+                                    </div>
+                                    <div class="">
+                                        <img src="http://openweathermap.org/img/wn/${data2.daily[i].weather[0].icon}@2x.png" alt="Weather Icon" class="smaller-icon"><br>
+                                    </div>
+                                    <div class="is-size-7">
+                                        Temp: ${Math.round(data2.daily[i].temp.day)} &#8457<br>
+                                        Humidity: ${data2.daily[i].humidity} %
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    }
+                    
+                    //
+                    // let's load the LOCAL STORAGE search history
+                    //
+
+                    var searchHistory = JSON.parse(localStorage.getItem("MY_WEATHER_APP_SEARCH_HISTORY"));
+
+                    //
+                    // It looks dumb to keep up with the same search multiple times, so lets unshift only unique searches
+                    //
+                    if(jQuery.inArray(searchString2, searchHistory) == -1) {
+                        searchHistory.unshift(searchString2);
+                    } 
+                    else {
+                        searchHistory.splice(jQuery.inArray(searchString2, searchHistory),1);
+                        // then put it back on at the top
+                        searchHistory.unshift(searchString2);
+                    }
+
+                    //
+                    // We cant keep everything - so lets just keep maxSearchHistory number of historical searches
+                    //
+
+                    if (searchHistory.length > maxSearchHistory) {
+                        searchHistory.pop();
+                    }
+                    
+                    //
+                    // Update local storage with current searchHistory
+                    //
+
+                    localStorage.setItem("MY_WEATHER_APP_SEARCH_HISTORY", JSON.stringify(searchHistory));
+
+                    //
+                    // render the search history box by first clearing the search history box out
+                    //
+
+                    $("#search-history").html(``);
+
+                    //
+                    // lets loop through all the elements in the searchHistory array and render the search box
+                    //
+
+                    searchHistory.forEach(function(searchItem) {
+                        $("#search-history").append(` 
+                        <div>
+                            <button class="button makeit-100">
+                                ${searchItem}
+                            </button>
+                        </div>`);
+                    });  
+            })
+        } // otherwise don't do anything because it was an invalid search
+        isValidSearch = true; // toggle to try again
+    });
+}

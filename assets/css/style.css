@@ -1,57 +1,19 @@
-h1 {
-    background-color: gray;
-    text-align: center;
+.makeit-100 {
+    width: 100%;
 }
-
-label {
-    margin-top: 10px;
-    font-size: 15px;
-    font-weight: bold;
+.smaller-icon {
+    width: 2rem;
+    height: 2rem;
 }
-
-.card {
-    margin: 10px;
+.uvi-green {
+    background-color: rgb(163, 255, 163);
+    color: black;
 }
-
-.colone {
-    background-color: whitesmoke;
+.uvi-yellow {
+    background-color: rgb(255, 255, 190);
+    color: black;
 }
-
-.coltwo {
-    background-color: whitesmoke;
+.uvi-red {
+    background-color: rgb(253, 123, 123);
+    color: black;
 }
-
-.btnRow { 
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.red {
-background-color: rgb(212, 7, 7);
-}
-
-.purple {
-    background-color: purple;
-}
-
-.green {
-    background-color: green;
-}
- 
-.yellow {
-    background-color: yellow;
-}
-
-.orange {
-    background-color: olive;
-}
-
-.cardTodayDate {
-    font-size: 15px;
-}
-
-.icons {
-    height: 65px;
-    width: 65px;
-}
-

@@ -9,4 +9,5 @@ Server-APIs-Weather-Dashboard URL: https://garysk94.github.io/Server-APIs-Weathe
 
 Server-APIs-Weather-Dashboard Picture previews
 
-![weather](https://user-images.githubusercontent.com/117596796/212581418-528d69b8-752b-4cfe-87bf-8b2239536159.png)
+
+![API Weather](https://user-images.githubusercontent.com/117596796/236075819-12f0cb8e-7cc7-4d36-9b89-28f1b8fae24d.png)
